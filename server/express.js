@@ -8,11 +8,11 @@ app.use(express.json());
 
 app.use(cors({}))
 
-const PORT = 5000;
+const PORT = 5001;
 
 app.use(express.json());
 
-const mongoURI = 'mongodb+srv://user103:user103@cluster0.l0izu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const mongoURI = 'mongodb+srv://ankitadhakad28:ankitadhakad28@program.io62t.mongodb.net/?retryWrites=true&w=majority&appName=program';
 
 // Connect to MongoDB
 mongoose.connect(mongoURI)
