@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 
 function SignupPage() {
   const [formData, setFormData] = useState({
@@ -37,11 +38,8 @@ function SignupPage() {
         }
 
         // Make a POST request to the server to create a new user
-        const response = await fetch('http://localhost:5000/users', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+        const response = await axios.post('http://localhost:5000/', {
+            
             body: JSON.stringify({
                 studentName: formData.studentName,
                 university: formData.university,
@@ -49,13 +47,13 @@ function SignupPage() {
                 password: formData.password,
             }),
         });
-
-        if (!response.ok) {
+        // console.log(response.statusText=="OK")
+        if (!response.statusText=="OK") {
             throw new Error('Failed to create user');
         }
 
-        const data = await response.json();
-        console.log('User  created:', data);
+        const data = await response.data;
+        console.log('User created:', data);
         // Optionally redirect or show a success message
 
     } catch (err) {
