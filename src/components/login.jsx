@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect ,useContext} from 'react';
 import { FaGoogle, FaFacebook, FaGithub, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { Link, useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
+import axios from 'axios';
+import { UserContext } from '../context';
 
 function LoginPage() {
   const [values, setValues] = useState({
@@ -12,17 +14,10 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
+  const{setCurrentUser,currentUser}=useContext(UserContext)
   let navigate = useNavigate();
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        navigate("/");
-      }
-    });
-    return () => unsubscribe(); // Cleanup subscription on unmount
-  }, [navigate]);
+
 
   const handleChange = (e) => {
     setValues({ ...values, [e.target.name]: e.target.value });
@@ -38,6 +33,23 @@ function LoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
+
+      const response =await axios.post('http://localhost:5000/user', {
+        
+          collegeId: email, // Assuming you want to use email as college ID
+          password: password,
+          
+      });
+      console.log(response.data)
+      setCurrentUser(response.data)
+
+      localStorage.setItem('currentUser', JSON.stringify({
+        studentName: response.data.studentName,
+        collegeId: response.data.collegeId,
+        university: response.data.university,
+        isProfessor: response.data.isProfessor
+      }));
+      // console.log(currentUser)
       navigate('/');
     } catch (err) {
       setError(err.message || 'An error occurred during login');

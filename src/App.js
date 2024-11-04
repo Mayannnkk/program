@@ -9,9 +9,12 @@ import SignupPage from './components/signup';
 import MyProjects from './components/myProjects';
 import SubmitProjectForm from './components/submitProject';
 import PostDetail from './components/postDetail';
+import { UserProvider } from './context';
 
 function App() {
   return (
+    <UserProvider>
+
     <Router>
       
         <Routes>
@@ -26,6 +29,7 @@ function App() {
         </Routes>
       
     </Router>
+    </UserProvider>
   );
 }
 

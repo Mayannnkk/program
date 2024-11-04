@@ -163,6 +163,64 @@ app.get('/projects', async (req, res) => {
     }
 });
 
+//get user info--------------------------------------------------------------------------------------
+
+// Import the User model
+const User = require('./schema'); // Adjust the path if necessary
+
+// Get all users endpoint
+app.post('/user', async (req, res) => {
+
+    const { collegeId, password}=req.body;
+    console.log(req.body)
+    try {
+        const users = await User.findOne({ collegeId: collegeId });; // Fetch all users
+        if (!users || users.length === 0) {
+            return res.status(404).json({ message: 'No users found' });
+        }
+        res.json(users); // Respond with the list of users
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ message: 'Error fetching users', error: error.message });
+    }
+});
+
+
+app.post('/users', async (req, res) => {
+    const { studentName, isProfessor, university, collegeId, password } = req.body.body;
+    console.log(req.body.body)
+    // Validate required fields
+    if (!studentName || typeof isProfessor !== 'boolean' || !university || !collegeId || !password) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    try {
+        // Hash the password before saving to the database
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create a new user instance
+        const newUser  = new User({
+            studentName,
+            isProfessor,
+            university,
+            collegeId,
+            password: hashedPassword // Store the hashed password
+        });
+
+        // Save the user to the database
+        await newUser .save();
+
+        res.status(200).json({ message: 'User  created successfully', user: newUser  });
+    } catch (error) {
+        console.error('Error creating user:', error);
+        if (error.code === 11000) {
+            // Handle duplicate key error (e.g., duplicate collegeId)
+            return res.status(400).json({ message: 'College ID already exists' });
+        }
+        res.status(500).json({ message: 'Error creating user', error: error.message });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

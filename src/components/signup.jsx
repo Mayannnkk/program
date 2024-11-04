@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState,useContext } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "../firebase";
+import { UserContext } from '../context';
 
 function SignupPage() {
   const [formData, setFormData] = useState({
@@ -15,6 +16,7 @@ function SignupPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const{setCurrentUser,currentUser}=useContext(UserContext)
 
   let navigate = useNavigate();
 
@@ -63,7 +65,7 @@ function SignupPage() {
       });
 
       // Make a POST request to the server to create a new user
-      const response = await axios.post('http://localhost:5000/', {
+      const response = await axios.post('http://localhost:5000/users', {
         body: {
           studentName: formData.studentName,
           university: formData.university,
@@ -73,6 +75,14 @@ function SignupPage() {
         }
       });
       console.log(formData)
+      localStorage.setItem('currentUser', JSON.stringify({
+        studentName: studentName,
+        email: email,
+        university: formData.university,
+        isProfessor: isProfessor
+      }));
+  
+      setCurrentUser (formData);
 
       if (response.status !== 200) {
         throw new Error('Failed to create user');
