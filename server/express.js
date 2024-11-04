@@ -48,18 +48,13 @@ const storage = new GridFsStorage({
     url: mongoURI,
     options: { useNewUrlParser: true, useUnifiedTopology: true },
     file: (req, file) => {
-        return new Promise((resolve,reject)=>{
-            if(err){
-                return reject(err);
-            }
-            const filename=`zip-${Date.now()}-${file.originalname}`
-            const fileinfo={
-                filename:filename,
-                bucketName:'uploads'
-            };
-            resolve(fileinfo)
-        })
-        
+        if (file.mimetype !== 'application/zip') {
+            return null; // Ensure only zip files are accepted
+        }
+        return {
+            filename: `zip-${Date.now()}-${file.originalname}`,
+            bucketName: 'uploads' // Collection name
+        };
     }
 });
 
@@ -94,7 +89,6 @@ app.post('/uploads', upload.fields([{ name: 'codeFile' }, { name: 'imageFile' }]
         res.status(500).json({ message: 'Error uploading files', error: error.message });
     }
 });
-
 
 // Get all uploaded projects and their files
 
