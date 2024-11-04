@@ -1,7 +1,6 @@
 import axios from 'axios';
 import React, { useState } from 'react';
-const mega = require('megajs');
-// const path = require('path');
+
 
 
 
@@ -26,15 +25,49 @@ const SubmitProjectForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const codeFormData = new FormData();
-    const imageFormData = new FormData();
-    // for (const key in formData) {
-    //   formDataToSubmit.append(key, formData[key]);
-    // }
-    codeFormData.append('codeFile', formData.codeFile);
-    imageFormData.append('file', formData.imageFile);
+    const dataToSubmit = new FormData();
+    dataToSubmit.append('codeFile', formData.codeFile);
+    dataToSubmit.append('imageFile', formData.imageFile);
+    dataToSubmit.append('studentName', formData.studentName);
+    dataToSubmit.append('university', formData.university);
+    dataToSubmit.append('projectTitle', formData.projectTitle);
+    dataToSubmit.append('projectDescription', formData.projectDescription);
 
     try {
+      // console.log(dataToSubmit)
+      const response = await axios.post('http://localhost:5000/uploads', dataToSubmit, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.status === 200) {
+        alert('Project submitted successfully!');
+        setFormData({
+          studentName: '',
+          university: '',
+          projectTitle: '',
+          projectDescription: '',
+          codeFile: null,
+          imageFile: null,
+        });
+      }
+    } catch (error) {
+      alert('Error submitting project: ' + error.message);
+    }
+  };
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   const codeFormData = new FormData();
+  //   const imageFormData = new FormData();
+  //   // for (const key in formData) {
+  //   //   formDataToSubmit.append(key, formData[key]);
+  //   // }
+  //   codeFormData.append('codeFile', formData.codeFile);
+  //   imageFormData.append('file', formData.imageFile);
+
+  //   try {
 
       // const codeFileResponse = await axios({
       //   method: "post",
@@ -81,20 +114,20 @@ const SubmitProjectForm = () => {
       // }
 
       // Handle success (e.g., show a success message or redirect)
-      alert('Project submitted successfully!');
-      setFormData({
-        studentName: '',
-        university: '',
-        projectTitle: '',
-        projectDescription: '',
-        codeFile: null,
-        imageFile: null,
-      });
-    } catch (error) {
-      // Handle error (e.g., show an error message)
-      alert(error.message);
-    }
-  };
+  //     alert('Project submitted successfully!');
+  //     setFormData({
+  //       studentName: '',
+  //       university: '',
+  //       projectTitle: '',
+  //       projectDescription: '',
+  //       codeFile: null,
+  //       imageFile: null,
+  //     });
+  //   } catch (error) {
+  //     // Handle error (e.g., show an error message)
+  //     alert(error.message);
+  //   }
+  // };
 
   return (
     <div className="container mx-auto p-4">

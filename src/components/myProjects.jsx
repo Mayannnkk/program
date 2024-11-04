@@ -1,57 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import axios from 'axios';
 
-const MyProjects = () => {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const DownloadFile = ({ filename }) => {
+    const downloadFile = async () => {
+        try {
+            const response = await axios.get(`http://localhost:5000/file/${filename}`, {
+                responseType: 'blob' // Important to get the file as a blob
+            });
 
-  // Simulating a fetch call to get projects
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        // Replace this with your API call
-        const response = await fetch('/api/projects'); // Example API endpoint
-        if (!response.ok) {
-          throw new Error('Failed to fetch projects');
+            // Create a URL for the file and trigger download
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename); // Name the file when downloading
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Error downloading file:', error);
         }
-        const data = await response.json();
-        setProjects(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
     };
 
-    fetchProjects();
-  }, []);
-
-  if (loading) {
-    return <div>Loading projects...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">My Submitted Projects</h1>
-      {projects.length === 0 ? (
-        <p>No projects submitted yet.</p>
-      ) : (
-        <ul className="space-y-4">
-          {projects.map((project) => (
-            <li key={project.id} className="border p-4 rounded-lg">
-              <h2 className="text-xl font-semibold">{project.title}</h2>
-              <p>{project.description}</p>
-              <p className="text-gray-500">Submitted on: {new Date(project.submittedDate).toLocaleDateString()}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
+    return (
+        <div>
+            <button onClick={downloadFile}>Download {filename}</button>
+        </div>
+    );
 };
 
-export default MyProjects;
+export default DownloadFile;

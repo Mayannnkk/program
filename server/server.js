@@ -1,68 +1,42 @@
-// server.js (or your main server file)
+// Import the express module
 const express = require('express');
-const mongoose = require('mongoose');
-const User = require('./schema'); // Import the User model
+const cors = require('cors')
+const mongoose = require('mongoose')
+const user = require('./schema')
 const app = express();
-const bcrypt = require('bcrypt');
-const cors= require('cors')
-const PORT =  5000;
-
-// Middleware to parse JSON
+const bcrypt = require("bcrypt");
+const multer = require('multer');
+const GridFsStorage = require('multer-gridfs-storage').GridFsStorage;
+const Grid = require('gridfs-stream');
+const bodyParser = require('body-parser');
+const methodOverride = require('method-override')
 app.use(express.json());
 
-app.use(cors({}))
-// app.use(cors({
-//     origin: 'http://localhost:3000', // Allow only this origin
-//     methods: ['GET', 'POST'], // Allow only specific HTTP methods
-//     credentials: true // Allow credentials (if needed)
-// }));
 
-// MongoDB connection string
-const mongoURI = 'mongodb+srv://user103:user103@cluster0.l0izu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+app.use(cors({}));
+app.use(bodyParser.json());
+app.use(methodOverride('_method'));
+
+const PORT = 5000;
+
+app.use(express.json());
+
+const mongoURI = 'mongodb://localhost:27017/';
 
 // Connect to MongoDB
-mongoose.connect(mongoURI)
-    .then(() => {
-        console.log('MongoDB connected successfully');
-    })
-    .catch(err => {
-        console.error('MongoDB connection error:', err);
-    });
+// Create mongo connection
+const conn = mongoose.createConnection(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
 
-// Route to create a new user
-app.post('/user', async (req, res) => {
-    const { studentName, university, collegeId, password } = req.body;
-    console.log(req.body)
-    // Hash the password before saving
-    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new user instance
-    const newUser  = new User({
-        studentName,
-        university,
-        collegeId,
-        password: hashedPassword // Note: Password should be hashed before saving
-    });
+app.post("uploads",function(req,res){
+    const file =req.files.file
+    const filepath =(new Date().getTime())+"-"+file.name
 
-    try {
-        const savedUser  = await newUser .save();
-        res.status(201).json(savedUser );
-    } catch (err) {
-        res.status(400).send(err);
-    }
-});
-
-// Route to get all users (for testing purposes)
-app.get('/user', async (req, res) => {
-    try {
-        const users = await User.find();
-        res.json(users);
-    } catch (err) {
-        res.status(500).send(err);
-    }
-});
-
-// Start the server
-app.listen(PORT, () => {
+    
+})
+  
+  // Start the server
+  app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
-});
+  });
+  
