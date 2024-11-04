@@ -2,18 +2,20 @@
 const express = require('express');
 const cors= require('cors')
 const mongoose=require('mongoose')
-const User=require('./schema')
+const user=require('./schema')
 const app = express();
+const bcrypt = require("bcrypt");
 app.use(express.json());
+
 
 app.use(cors({}))
 
-const PORT = 5001;
+const PORT = 5000;
 
 app.use(express.json());
 
-const mongoURI = 'mongodb+srv://ankitadhakad28:ankitadhakad28@program.io62t.mongodb.net/?retryWrites=true&w=majority&appName=program';
-//hii
+const mongoURI = 'mongodb://localhost:27017/';
+
 // Connect to MongoDB
 mongoose.connect(mongoURI)
     .then(() => {
@@ -24,12 +26,32 @@ mongoose.connect(mongoURI)
     });
 
 // Define a simple route
-app.post('/', (req, res) => {
-    const data=req.body;
-    console.log(data)
-    // res.send(data)
-    res.json({message:'ok', data:data})
-    // res.send('Hello, World!');
+app.post('/', async (req, res) => {
+    // const data = req.body;
+
+    // Create a new user instance
+   
+    const { studentName, university, collegeId, password,isProfessor } = req.body.body;
+    console.log(req.body.body)
+    try {
+        // Save the user to the database
+        
+            // const hashedpassword = await bcrypt.hash(password, 10);
+            const collection = await user.create({
+                studentName:studentName,
+                isProfessor:isProfessor,
+                university:university, 
+                collegeId:collegeId, 
+                password:password
+            })
+            // delete collection.password;
+            console.log(collection)
+        
+        res.json({ message: 'User  created successfully', data: req.body  });
+    } catch (error) {
+        console.error('Error saving user:', error);
+        res.status(500).json({ message: 'Error saving user', error: error.message });
+    }
 });
 
 

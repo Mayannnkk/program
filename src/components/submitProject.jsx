@@ -1,4 +1,9 @@
+import axios from 'axios';
 import React, { useState } from 'react';
+const mega = require('megajs');
+// const path = require('path');
+
+
 
 const SubmitProjectForm = () => {
   const [formData, setFormData] = useState({
@@ -10,7 +15,7 @@ const SubmitProjectForm = () => {
     imageFile: null,
   });
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const { name, value, files } = e.target;
     setFormData({
       ...formData,
@@ -20,21 +25,60 @@ const SubmitProjectForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const formDataToSubmit = new FormData();
-    for (const key in formData) {
-      formDataToSubmit.append(key, formData[key]);
-    }
+
+    const codeFormData = new FormData();
+    const imageFormData = new FormData();
+    // for (const key in formData) {
+    //   formDataToSubmit.append(key, formData[key]);
+    // }
+    codeFormData.append('codeFile', formData.codeFile);
+    imageFormData.append('file', formData.imageFile);
 
     try {
-      const response = await fetch('/api/submit-project', {
-        method: 'POST',
-        body: formDataToSubmit,
-      });
 
-      if (!response.ok) {
-        throw new Error('Failed to submit the project');
-      }
+      // const codeFileResponse = await axios({
+      //   method: "post",
+      //   url: "https://api.pinata.cloud/pinning/pinFileToIPFS",
+      //   data: codeFormData,
+      //   headers: {
+      //     pinata_api_key: "0a7a74e5bc22df15ebd4",
+      //     pinata_secret_api_key: "541d0b3202be9dd36596f6d39331bc8e84d451555bfc7ba2ca0227cc421419cf",
+      //     "Content-Type": "multipart/form-data"
+      //   }
+      // })
+      // const codeFileUrl = "https://gateway.pinata.cloud/ipfs/" + codeFileResponse.data.IpfsHash
+      // console.log(codeFileUrl)
+
+      // const imageFileResponse=await axios({
+      //   method:"post",
+      //   url: "https://api.pinata.cloud/pinning/pinFileToIPFS",
+      //   data:imageFormData,
+      //   headers:{
+      //     pinata_api_key:"0a7a74e5bc22df15ebd4",
+      //     pinata_secret_api_key:"541d0b3202be9dd36596f6d39331bc8e84d451555bfc7ba2ca0227cc421419cf",
+      //     "Content-Type":"multipart/form-data"
+      //   }
+      // })
+      // const imageFileUrl="https://gateway.pinata.cloud/ipfs/"+imageFileResponse.data.IpfsHash
+      // console.log(imageFileUrl)
+
+      
+
+
+      // if (codeFileUrl) {
+      //   console.log(formData)
+      // }
+      // console.log(formData)
+      // console.log(formDataToSubmit)
+
+      // const response = await fetch('/api/submit-project', {
+      //   method: 'POST',
+      //   body: formDataToSubmit,
+      // });
+
+      // if (!response.ok) {
+      //   throw new Error('Failed to submit the project');
+      // }
 
       // Handle success (e.g., show a success message or redirect)
       alert('Project submitted successfully!');

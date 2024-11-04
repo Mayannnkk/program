@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { Link, useNavigate } from "react-router-dom";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth } from "../firebase";
 
 function SignupPage() {
   const [formData, setFormData] = useState({
@@ -8,18 +11,29 @@ function SignupPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    isProfessor: false, // Field to indicate if the user is a professor
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  let navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevState => ({
       ...prevState,
-      [name]: value
+      [name]: value // Handle text input
     }));
     // Clear error when user starts typing
     if (error) setError('');
+  };
+
+  const handleCheckboxChange = (e) => {
+    const { checked } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      isProfessor: checked // Update isProfessor based on checkbox state
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -28,40 +42,51 @@ function SignupPage() {
     setError('');
 
     try {
-        // Basic validation
-        if (!formData.studentName || !formData.university || !formData.email || !formData.password || !formData.confirmPassword) {
-            throw new Error('Please fill in all fields');
+      // Basic validation
+      if (!formData.studentName || !formData.university || !formData.email || !formData.password || !formData.confirmPassword) {
+        throw new Error('Please fill in all fields');
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        throw new Error('Passwords do not match');
+      }
+
+      const { studentName, email, password, isProfessor } = formData;
+
+      // Create user with Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Update user profile with display name
+      await updateProfile(user, {
+        displayName: studentName
+      });
+
+      // Make a POST request to the server to create a new user
+      const response = await axios.post('http://localhost:5000/', {
+        body: {
+          studentName: formData.studentName,
+          university: formData.university,
+          collegeId: formData.email, // Assuming you want to use email as college ID
+          password: formData.password,
+          isProfessor: formData.isProfessor // Include the boolean value for professor status
         }
+      });
+      console.log(formData)
 
-        if (formData.password !== formData.confirmPassword) {
-            throw new Error('Passwords do not match');
-        }
+      if (response.status !== 200) {
+        throw new Error('Failed to create user');
+      }
 
-        // Make a POST request to the server to create a new user
-        const response = await axios.post('http://localhost:5000/', {
-            
-            body: JSON.stringify({
-                studentName: formData.studentName,
-                university: formData.university,
-                collegeId: formData.email, // Assuming you want to use email as college ID
-                password: formData.password,
-            }),
-        });
-        // console.log(response.statusText=="OK")
-        if (!response.statusText=="OK") {
-            throw new Error('Failed to create user');
-        }
-
-        const data = await response.data;
-        console.log('User created:', data);
-        // Optionally redirect or show a success message
-
+      const data = await response.data;
+      console.log('User  created:', data);
+      navigate('/'); // Redirect after successful signup
     } catch (err) {
-        setError(err.message || 'An error occurred during signup');
+      setError(err.message || 'An error occurred during signup');
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -94,7 +119,7 @@ function SignupPage() {
                 name="studentName"
                 type="text"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline -none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Student Name"
                 value={formData.studentName}
                 onChange={handleChange}
@@ -109,7 +134,7 @@ function SignupPage() {
                 name="university"
                 type="text"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="University"
                 value={formData.university}
                 onChange={handleChange}
@@ -118,15 +143,14 @@ function SignupPage() {
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="sr-only">College Email ID</label>
+              <label htmlFor="email" className="sr-only">Email</label>
               <input
                 id="email"
                 name="email"
                 type="email"
-                autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="College Email ID"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Email"
                 value={formData.email}
                 onChange={handleChange}
               />
@@ -139,9 +163,8 @@ function SignupPage() {
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="current-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
@@ -155,13 +178,25 @@ function SignupPage() {
                 id="confirm-password"
                 name="confirmPassword"
                 type="password"
-                autoComplete="current-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
               />
+            </div>
+
+            {/* Professor Checkbox */}
+            <div>
+              <input
+                id="is-professor"
+                name="isProfessor"
+                type="checkbox"
+                className="mr-2"
+                checked={formData.isProfessor}
+                onChange={handleCheckboxChange}
+              />
+              <label htmlFor="is-professor" className="text-sm text-gray-600">I am a professor</label>
             </div>
           </div>
 
@@ -172,12 +207,14 @@ function SignupPage() {
           >
             {loading ? 'Loading...' : 'Sign up'}
           </button>
-
-          {/* Login Option */}
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Already have an account? <a href="/login" className="text-indigo-600 hover:text-indigo-900">Login</a>
-          </p>
         </form>
+
+        {/* Already have an account? */}
+        <div className="text-center">
+          <Link to="/login" className="text-sm text-gray-600 hover:text-gray-900">
+            Already have an account?
+          </Link>
+        </div>
       </div>
     </div>
   );
