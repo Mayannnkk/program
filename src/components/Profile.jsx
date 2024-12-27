@@ -8,24 +8,10 @@ const Profile = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { currentUser,setCurrentUser} = useContext(UserContext);
+  const [currentUser,setCurrentUser] = useState();
   const navigate = useNavigate();
   
-  // useEffect(() => {
-  //   const fetchUsers = async () => {
-  //     try {
-  //       const response = await axios.get('http://localhost:5000/users'); // Adjust the URL if necessary
-  //       setUsers(response.data); // Set the users state with the response data
-  //     } catch (err) {
-  //       setError(err.message); // Set the error message if the request fails
-  //     } finally {
-  //       setLoading(false); // Set loading to false once the request is complete
-  //     }
-  //   };
-
-  //   fetchUsers();
-  // }, []);
-  // console.log(users[0])
+  const [projects, setProjects] = useState([]);
 
   const userInfo = {
     name: 'John Doe',
@@ -34,12 +20,12 @@ const Profile = () => {
     savedItems: ['Item 1', 'Item 2'],
   };
 
-  // useEffect(() => {
-  //   const storedUser  = JSON.parse(localStorage.getItem('currentUser '));
-  //   setCurrentUser (storedUser );
-  // }, []);
+  useEffect(() => {
+    const storedUser  = JSON.parse(localStorage.getItem('currentUser'));
+    setCurrentUser (storedUser);
+  }, []);
 
-  console.log(currentUser)
+  // console.log(currentUser)
   const handleLogout = () => {
     // Clear user data from local storage
     localStorage.removeItem('currentUser');
@@ -48,21 +34,46 @@ const Profile = () => {
     navigate('/login');
     setCurrentUser (null);
   };
+
+  useEffect(() => {
+    const fetchUserProjects = async () => {
+      if (!currentUser  || !currentUser.studentName) {
+        setError('No user found.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await axios.post(`http://localhost:5000/projectsuser`,currentUser); // Adjust the URL as necessary
+        console.log(response.data)
+        setProjects(response.data);
+      } catch (err) {
+        console.error('Error fetching projects:', err);
+        setError('Failed to load projects.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProjects();
+  }, [currentUser]);
+  // console.log(currentUser)
   return (
     <>
     {currentUser && 
-    <div className="bg-white shadow-md rounded-md p-4">
+    <div className=" text-white m-2 bg-gradient-to-t p-10 from-gray-800 to-gray-700 shadow-md rounded-md p-4">
     <h2 className="text-lg font-bold mb-4">Profile</h2>
     <div className="mb-4">
-      <p className="font-semibold">Name: <span className="font-normal">{currentUser.studentName}</span></p>
-      <p className="font-semibold">University: <span className="font-normal">{currentUser.university}</span></p>
+      <p className="font-semibold text-gray-400">Name: <span className="font-normal text-white">{currentUser.studentName}</span></p>
+      <p className="font-semibold text-gray-400">University: <span className="font-normal text-white">{currentUser.university}</span></p>
+      <p className="font-semibold text-gray-400">Role: <span className="font-normal text-white">{currentUser.isProfessor?"Professor":"Student"}</span></p>
     </div>
 
     <div className="mb-4">
       <h3 className="font-semibold">My Submissions:</h3>
       <ul className="list-disc list-inside">
-        {userInfo.submissions.map((submission, index) => (
-          <li key={index}>{submission}</li>
+        {projects.map((project) => (
+          <li key={project._id}>{project.projectTitle}</li>
         ))}
       </ul>
     </div>

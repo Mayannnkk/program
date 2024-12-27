@@ -10,6 +10,9 @@ import MyProjects from './components/myProjects';
 import SubmitProjectForm from './components/submitProject';
 import PostDetail from './components/postDetail';
 import { UserProvider } from './context';
+import ProjectDetail from './components/project';
+import EditProject from './components/editProject';
+import RateProject from './components/rateProject';
 
 function App() {
   return (
@@ -25,7 +28,9 @@ function App() {
           <Route path="/signup" element={<SignupPage/>} />
           <Route path="/myProjects" element={<MyProjects/>} />
           <Route path="/submitProject" element={<SubmitProjectForm/>} />
-          <Route path="/post/:postId" element={<PostDetail/>} />
+          <Route path="/projects/:id" element={<ProjectDetail/>} />
+          <Route path="/myProjects/editproject/:id" element={<EditProject />} />
+          <Route path="/rateProject" element={<RateProject/>} />
         </Routes>
       
     </Router>

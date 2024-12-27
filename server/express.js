@@ -38,7 +38,12 @@ const projectSchema = new mongoose.Schema({
     projectTitle: String,
     projectDescription: String,
     codeFile: String,
-    imageFile: String
+    imageFile: String,
+    likes: Number,
+    comments:Array,
+    rating:Number,
+    feedback:String,
+    tag:String
 });
 
 const Project = mongoose.model('Project', projectSchema);
@@ -62,7 +67,7 @@ const upload = multer({ storage });
 
 // Upload endpoint
 app.post('/uploads', upload.fields([{ name: 'codeFile' }, { name: 'imageFile' }]), async (req, res) => {
-    const { studentName, university, projectTitle, projectDescription } = req.body;
+    const { studentName, university, projectTitle, projectDescription,tag } = req.body;
 
     // Check if both files are uploaded
     if (!req.files || !req.files.codeFile || !req.files.imageFile) {
@@ -75,7 +80,12 @@ app.post('/uploads', upload.fields([{ name: 'codeFile' }, { name: 'imageFile' }]
         projectTitle,
         projectDescription,
         codeFile: req.files.codeFile[0].filename,
-        imageFile: req.files.imageFile[0].filename
+        imageFile: req.files.imageFile[0].filename,
+        likes:0,
+        comments:[],
+        rating:0,
+        feedback:"",
+        tag:tag
     });
     console.log(newProject)
     try {
@@ -148,6 +158,41 @@ app.get('/file/:filename', async (req, res) => {
     }
 });
 
+// POST route to upload project data
+app.post('/uploadproject', async (req, res) => {
+    const { studentName, university, projectTitle, projectDescription, codeFile, imageFile,tag } = req.body;
+
+    // Validate required fields
+    if (!studentName || !university || !projectTitle || !projectDescription || !imageFile) {
+        return res.status(400).json({ message: 'All fields are required except codeFile' });
+    }
+
+    const newProject = new Project({
+        studentName,
+        university,
+        projectTitle,
+        projectDescription,
+        codeFile: codeFile || null, // Set codeFile to null if not provided
+        imageFile,
+        likes:0,
+        comments:[],
+        rating:0,
+        feedback:"",
+        tag
+
+    });
+
+    try {
+        await newProject.save(); // Save project details in the database
+        res.status(200).json({
+            message: 'Project uploaded successfully',
+            project: newProject
+        });
+    } catch (error) {
+        console.error('Error saving project:', error);
+        res.status(500).json({ message: 'Error saving project', error: error.message });
+    }
+});
 
 app.get('/projects', async (req, res) => {
     try {
@@ -155,11 +200,184 @@ app.get('/projects', async (req, res) => {
         if (!projects || projects.length === 0) {
             return res.status(404).json({ message: 'No projects found' });
         }
-        console.log(projects)
+        // console.log(projects)
         res.json(projects); // Respond with the list of projects
     } catch (error) {
         console.error('Error fetching projects:', error);
         res.status(500).json({ message: 'Error fetching projects', error: error.message });
+    }
+});
+
+// app.get('/myprojects', async (req, res) => {
+//     try {
+//         const {currentuserdata}=req.body
+//         const projects = await Project.find({studentName:currentuserdata.studentName}); // Fetch all projects
+//         if (!projects || projects.length === 0) {
+//             return res.status(404).json({ message: 'No projects found' });
+//         }
+//         // console.log(projects)
+//         res.json(projects); // Respond with the list of projects
+//     } catch (error) {
+//         console.error('Error fetching projects:', error);
+//         res.status(500).json({ message: 'Error fetching projects', error: error.message });
+//     }
+// });
+
+// Get a project by ID
+app.get('/projects/:id', async (req, res) => {
+    const { id } = req.params; // Get the project ID from the request parameters
+
+    try {
+        const project = await Project.findById(id); // Fetch the project from the database by ID
+
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' }); // Handle case where project is not found
+        }
+
+        res.json(project); // Respond with the project details
+    } catch (error) {
+        console.error('Error fetching project:', error);
+        res.status(500).json({ message: 'Error fetching project', error: error.message }); // Handle any errors
+    }
+});
+// Assuming you have already imported necessary modules and set up your Express app
+
+// PUT route to update project details
+app.put('/projects/:id', async (req, res) => {
+    const { id } = req.params; // Get the project ID from the request parameters
+    const { projectTitle, projectDescription } = req.body.body; // Extract updated fields from request body
+    // console.log(req.body.body)
+    try {
+        // Find the project by ID and update it
+        const updatedProject = await Project.findByIdAndUpdate(id, {
+            projectTitle:projectTitle,
+            projectDescription:projectDescription,
+            
+            // Include any other fields you want to update
+        }, { new: true }); // The new option returns the updated document
+        // console.log(updatedProject)
+        if (!updatedProject) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+
+        res.json({
+            message: 'Project updated successfully',
+            project: updatedProject
+        });
+    } catch (error) {
+        console.error('Error updating project:', error);
+        res.status(500).json({ message: 'Error updating project', error: error.message });
+    }
+});
+app.put('/projectfeedback/:id', async (req, res) => {
+    const { id } = req.params; // Get the project ID from the request parameters
+    const { feedback,rating } = req.body; // Extract updated fields from request body
+    // console.log(req.body.body)
+    try {
+        // Find the project by ID and update it
+        const updatedProject = await Project.findByIdAndUpdate(id, {
+            feedback: feedback,
+            rating: rating,
+            
+            // Include any other fields you want to update
+        }, { new: true }); // The new option returns the updated document
+        // console.log(updatedProject)
+        if (!updatedProject) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+
+        res.json({
+            message: 'Project updated successfully',
+            project: updatedProject
+        });
+    } catch (error) {
+        console.error('Error updating project:', error);
+        res.status(500).json({ message: 'Error updating project', error: error.message });
+    }
+});
+app.put('/projectlike/:id', async (req, res) => {
+    const { id } = req.params; // Get the project ID from the request parameters
+    const { likes } = req.body; // Extract updated fields from request body
+    // console.log(req.body.body)
+    try {
+        // Find the project by ID and update it
+        const updatedProject = await Project.findByIdAndUpdate(id, {
+            likes:likes
+            
+            // Include any other fields you want to update
+        }, { new: true }); // The new option returns the updated document
+        // console.log(updatedProject)
+        if (!updatedProject) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+
+        res.json({
+            message: 'Project updated successfully',
+            project: updatedProject
+        });
+    } catch (error) {
+        console.error('Error updating project:', error);
+        res.status(500).json({ message: 'Error updating project', error: error.message });
+    }
+});
+app.put('/projectcomment/:id', async (req, res) => {
+    const { id } = req.params; // Get the project ID from the request parameters
+    const { comments } = req.body; // Extract updated fields from request body
+    // console.log(req.body.body)
+    // const newcomments=comments()
+    
+    try {
+        // Find the project by ID and update it
+        // let array=[...list]
+        
+        const updatedProject = await Project.findByIdAndUpdate(id, {
+            comments:comments
+            
+            // Include any other fields you want to update
+        })
+        if (!updatedProject) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+
+        res.json({
+            message: 'Project updated successfully',
+            project: updatedProject
+        });
+    } catch (error) {
+        console.error('Error updating project:', error);
+        res.status(500).json({ message: 'Error updating project', error: error.message });
+    }
+});
+app.post('/myProjects/editproject/:id', async (req, res) => {
+    const { id } = req.params; // Get the project ID from the request parameters
+
+    try {
+        const project = await Project.findById(id); // Fetch the project from the database by ID
+
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' }); // Handle case where project is not found
+        }
+
+        res.json(project); // Respond with the project details
+    } catch (error) {
+        console.error('Error fetching project:', error);
+        res.status(500).json({ message: 'Error fetching project', error: error.message }); // Handle any errors
+    }
+});
+app.post('/projectsuser', async (req, res) => {
+    const {studentName} = req.body; // Get the project ID from the request parameters
+    // console.log(studentName)
+    try {
+        const project = await Project.find({studentName:studentName}); // Fetch the project from the database by ID
+
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' }); // Handle case where project is not found
+        }
+
+        res.json(project); // Respond with the project details
+    } catch (error) {
+        console.error('Error fetching project:', error);
+        res.status(500).json({ message: 'Error fetching project', error: error.message }); // Handle any errors
     }
 });
 

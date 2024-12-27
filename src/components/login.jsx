@@ -64,7 +64,8 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <>
+    <div className="min-h-screen flex items-center justify-center bg-gray-800 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
         {/* Header */}
         <div>
@@ -174,6 +175,12 @@ function LoginPage() {
         </form>
       </div>
     </div>
+    <style jsx>{`
+  body {
+    background: linear-gradient(to right, #2d3748, #1a202c); /* This corresponds to from-gray-800 to gray-900 */
+  }
+`}</style>
+</>
   );
 }
 

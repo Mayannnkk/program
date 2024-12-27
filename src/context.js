@@ -8,12 +8,12 @@ const UserProvider = ({ children }) => {
   const [currentUser , setCurrentUser ] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [projects, setProjects] = useState([]);
   
 
   return (
     <>
-    <UserContext.Provider value={{ setCurrentUser,currentUser , loading, error }}>
+    <UserContext.Provider value={{ projects,setProjects,setCurrentUser,currentUser , loading, error }}>
       {children}
     </UserContext.Provider>
     </>

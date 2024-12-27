@@ -1,10 +1,9 @@
 import axios from 'axios';
 import React, { useState } from 'react';
-
-
-
+import { useNavigate } from 'react-router-dom';
 
 const SubmitProjectForm = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     studentName: '',
     university: '',
@@ -12,9 +11,11 @@ const SubmitProjectForm = () => {
     projectDescription: '',
     codeFile: null,
     imageFile: null,
+    projectCategory: '',
+    tag: '', // Added tags to state
   });
 
-  const handleChange = async (e) => {
+  const handleChange = (e) => {
     const { name, value, files } = e.target;
     setFormData({
       ...formData,
@@ -25,22 +26,26 @@ const SubmitProjectForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const dataToSubmit = new FormData();
-    dataToSubmit.append('codeFile', formData.codeFile);
-    dataToSubmit.append('imageFile', formData.imageFile);
-    dataToSubmit.append('studentName', formData.studentName);
-    dataToSubmit.append('university', formData.university);
-    dataToSubmit.append('projectTitle', formData.projectTitle);
-    dataToSubmit.append('projectDescription', formData.projectDescription);
-
     try {
-      // console.log(dataToSubmit)
-      const response = await axios.post('http://localhost:5000/uploads', dataToSubmit, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      // Upload image file to Pinata
+      const imageFileResponse = await uploadToPinata(formData.imageFile);
+      const imageFileUrl = `https://gateway.pinata.cloud/ipfs/${imageFileResponse.data.IpfsHash}`;
 
+      // Prepare data to submit
+      const dataToSubmit = {
+        studentName: formData.studentName,
+        university: formData.university,
+        projectTitle: formData.projectTitle,
+        projectDescription: formData.projectDescription,
+        codeFile: null, // Set codeFile to null
+        imageFile: imageFileUrl, // Use the URL from Pinata
+        projectCategory: formData.projectCategory, // Include projectCategory
+        tag: formData.tag // Split tags into an array
+      };
+
+      // Send data to the server
+      const response = await axios.post('http://localhost:5000/uploadproject', dataToSubmit);
+      console.log(dataToSubmit);
       if (response.status === 200) {
         alert('Project submitted successfully!');
         setFormData({
@@ -50,160 +55,129 @@ const SubmitProjectForm = () => {
           projectDescription: '',
           codeFile: null,
           imageFile: null,
+          projectCategory: '', // Reset projectCategory
+          tags: '', // Reset tags
         });
+        navigate('/');
       }
     } catch (error) {
       alert('Error submitting project: ' + error.message);
     }
   };
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
 
-  //   const codeFormData = new FormData();
-  //   const imageFormData = new FormData();
-  //   // for (const key in formData) {
-  //   //   formDataToSubmit.append(key, formData[key]);
-  //   // }
-  //   codeFormData.append('codeFile', formData.codeFile);
-  //   imageFormData.append('file', formData.imageFile);
+  const uploadToPinata = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
 
-  //   try {
-
-      // const codeFileResponse = await axios({
-      //   method: "post",
-      //   url: "https://api.pinata.cloud/pinning/pinFileToIPFS",
-      //   data: codeFormData,
-      //   headers: {
-      //     pinata_api_key: "0a7a74e5bc22df15ebd4",
-      //     pinata_secret_api_key: "541d0b3202be9dd36596f6d39331bc8e84d451555bfc7ba2ca0227cc421419cf",
-      //     "Content-Type": "multipart/form-data"
-      //   }
-      // })
-      // const codeFileUrl = "https://gateway.pinata.cloud/ipfs/" + codeFileResponse.data.IpfsHash
-      // console.log(codeFileUrl)
-
-      // const imageFileResponse=await axios({
-      //   method:"post",
-      //   url: "https://api.pinata.cloud/pinning/pinFileToIPFS",
-      //   data:imageFormData,
-      //   headers:{
-      //     pinata_api_key:"0a7a74e5bc22df15ebd4",
-      //     pinata_secret_api_key:"541d0b3202be9dd36596f6d39331bc8e84d451555bfc7ba2ca0227cc421419cf",
-      //     "Content-Type":"multipart/form-data"
-      //   }
-      // })
-      // const imageFileUrl="https://gateway.pinata.cloud/ipfs/"+imageFileResponse.data.IpfsHash
-      // console.log(imageFileUrl)
-
-      
-
-
-      // if (codeFileUrl) {
-      //   console.log(formData)
-      // }
-      // console.log(formData)
-      // console.log(formDataToSubmit)
-
-      // const response = await fetch('/api/submit-project', {
-      //   method: 'POST',
-      //   body: formDataToSubmit,
-      // });
-
-      // if (!response.ok) {
-      //   throw new Error('Failed to submit the project');
-      // }
-
-      // Handle success (e.g., show a success message or redirect)
-  //     alert('Project submitted successfully!');
-  //     setFormData({
-  //       studentName: '',
-  //       university: '',
-  //       projectTitle: '',
-  //       projectDescription: '',
-  //       codeFile: null,
-  //       imageFile: null,
-  //     });
-  //   } catch (error) {
-  //     // Handle error (e.g., show an error message)
-  //     alert(error.message);
-  //   }
-  // };
+    return axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', formData, {
+      headers: {
+        pinata_api_key: '0a7a74e5bc22df15ebd4',
+        pinata_secret_api_key: '541d0b3202be9dd36596f6d39331bc8e84d451555bfc7ba2ca0227cc421419cf',
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  };
 
   return (
+    <>
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Submit Your Project</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block mb-1">Student Name</label>
-          <input
-            type="text"
-            name="studentName"
-            value={formData.studentName}
-            onChange={handleChange}
-            required
-            className="border p-2 w-full"
-          />
-        </div>
-        <div>
-          <label className="block mb-1">University</label>
-          <input
-            type="text"
-            name="university"
-            value={formData.university}
-            onChange={handleChange}
-            required
-            className="border p-2 w-full"
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Project Title</label>
-          <input
-            type="text"
-            name="projectTitle"
-            value={formData.projectTitle}
-            onChange={handleChange}
-            required
-            className="border p-2 w-full"
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Project Description</label>
-          <textarea
-            name="projectDescription"
-            value={formData.projectDescription}
-            onChange={handleChange}
-            required
-            className="border p-2 w-full"
-            rows="4"
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Code File</label>
-          <input
-            type="file"
-            name="codeFile"
-            onChange={handleChange}
-            accept=".zip,.rar,.tar,.gz,.js,.py,.java" // Acceptable file types
-            required
-            className="border p-2 w-full"
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Image File</label>
-          <input
-            type="file"
-            name="imageFile"
-            onChange={handleChange}
-            accept="image/*" // Accepts any image file
-            required
-            className="border p-2 w-full"
-          />
-        </div>
-        <button type="submit" className="bg-blue-500 text-white p-2 rounded">
-          Submit Project
-        </button>
-      </form>
+      <div className="max-w-lg mx-auto bg-white shadow-lg rounded-lg p-6">
+        <h1 className="text-2xl font-bold mb-4 text-center">Submit Your Project</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block mb-1">Student Name</label>
+            <input
+              type="text"
+              name="studentName"
+              value={formData.studentName}
+              onChange={handleChange}
+              required
+              className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block mb-1">University</label>
+            <input
+              type="text"
+              name="university"
+              value={formData.university}
+              onChange={handleChange}
+              required
+              className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block mb-1">Project Title</label>
+            <input
+              type="text"
+              name="projectTitle"
+              value={formData.projectTitle}
+              onChange={handleChange}
+              required
+              className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block mb-1">Project Description</label>
+            <textarea
+              name="projectDescription"
+              value={formData.projectDescription}
+              onChange={handleChange}
+              required
+              className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows="4"
+            />
+          </div>
+          <div>
+            <label className="block mb-1">Code File</label>
+            <input
+              type="file"
+              name="codeFile"
+              onChange={handleChange}
+              className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block mb-1">Image File</label>
+            <input
+              type="file"
+              name="imageFile"
+              onChange={handleChange}
+              required
+              className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block mb-1">Project Category</label>
+            <div className="space-y-2">
+              {['Ai/Ml', 'Fullstack', 'Health-care', 'Educational', 'Deep Learning', 'Cloud', 'Electronics'].map(category => (
+                <label key={category} className="flex items-center">
+                  <input
+                    type="radio"
+                    name="projectCategory"
+                    value={category}
+                    onChange={handleChange}
+                    required
+                    className="mr-2"
+                  />
+                  {category}
+                </label>
+              ))}
+            </div>
+          </div>
+          
+          <button type="submit" className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition duration-200">
+            Submit Project
+          </button>
+        </form>
+      </div>
     </div>
+    <style jsx>{`
+  body {
+    background: linear-gradient(to right, #2d3748, #1a202c); /* This corresponds to from-gray-800 to gray-900 */
+  }
+`}</style>
+    </>
   );
 };
 
